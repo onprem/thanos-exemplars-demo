@@ -1,4 +1,5 @@
 local common = {
+  local cfg = self,
   prometheus: {
     namespace: 'monitoring',
   },
@@ -9,6 +10,11 @@ local common = {
   },
   tempo: {
     namespace: 'tempo',
+  },
+  tracing: {
+    host: 'tempo.' + common.tempo.namespace + '.svc',
+    sampler_type: 'const',
+    sampler_param: '1',
   },
 };
 
@@ -123,6 +129,16 @@ local q = t.query(thanosCommon.config {
   replicaLabels: ['prometheus_replica', 'rule_replica'],
   serviceMonitor: true,
   stores+: ['dnssrv+_grpc._tcp.prometheus-k8s-thanos-sidecar.' + common.prometheus.namespace + '.svc.cluster.local'],
+  tracing: {
+    type: 'JAEGER',
+    config: {
+      service_name: 'thanos_query',
+      agent_host: common.tracing.host,
+      sampler_type: common.tracing.sampler_type,
+      sampler_param: 1,
+      tags: 'namespace=' + common.thanos.namespace
+    },
+  },
 });
 
 local qnew = q {
@@ -172,7 +188,7 @@ local tnsCommon = {
     env: [
       {
         name: 'JAEGER_AGENT_HOST',
-        value: 'tempo.' + common.tempo.namespace + '.svc',
+        value: common.tracing.host,
       },
       {
         name: 'JAEGER_TAGS',
@@ -180,11 +196,11 @@ local tnsCommon = {
       },
       {
         name: 'JAEGER_SAMPLER_TYPE',
-        value: 'const',
+        value: common.tracing.sampler_type,
       },
       {
         name: 'JAEGER_SAMPLER_PARAM',
-        value: '1',
+        value: common.tracing.sampler_param,
       },
     ],
     serviceMonitor: true,

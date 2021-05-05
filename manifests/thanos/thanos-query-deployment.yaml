@@ -48,6 +48,14 @@ spec:
         - --query.replica-label=rule_replica
         - --store=dnssrv+_grpc._tcp.thanos-store.thanos.svc.cluster.local
         - --store=dnssrv+_grpc._tcp.prometheus-k8s-thanos-sidecar.monitoring.svc.cluster.local
+        - |-
+          --tracing.config="config":
+            "agent_host": "tempo.tempo.svc"
+            "sampler_param": 1
+            "sampler_type": "const"
+            "service_name": "thanos_query"
+            "tags": "namespace=thanos"
+          "type": "JAEGER"
         - --query.auto-downsampling
         - --target=dnssrv+_grpc._tcp.prometheus-k8s-thanos-sidecar.monitoring.svc.cluster.local
         - --exemplar=dnssrv+_grpc._tcp.prometheus-k8s-thanos-sidecar.monitoring.svc.cluster.local
