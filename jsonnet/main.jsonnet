@@ -45,6 +45,14 @@ local kp =
             url: 'http://thanos-query.' + common.thanos.namespace + '.svc:9090',
             version: 1,
             editable: false,
+            jsonData: {
+              exemplarTraceIdDestinations: [
+                {
+                  datasourceUid: 'tempo1',
+                  name: 'traceID',
+                },
+              ],
+            },
           },
           {
             name: 'tempo',
@@ -61,6 +69,14 @@ local kp =
     },
   };
 
+local prometheus = kp.prometheus {
+  prometheus+: {
+    spec+: {
+      enableFeatures: ['exemplar-storage'],
+    },
+  },
+};
+
 { 'kube-prometheus/setup/0namespace-namespace': kp.kubePrometheus.namespace } +
 {
   ['kube-prometheus/setup/prometheus-operator-' + name]: kp.prometheusOperator[name]
@@ -76,7 +92,7 @@ local kp =
 { ['kube-prometheus/kube-state-metrics-' + name]: kp.kubeStateMetrics[name] for name in std.objectFields(kp.kubeStateMetrics) } +
 { ['kube-prometheus/kubernetes-' + name]: kp.kubernetesControlPlane[name] for name in std.objectFields(kp.kubernetesControlPlane) }
 { ['kube-prometheus/node-exporter-' + name]: kp.nodeExporter[name] for name in std.objectFields(kp.nodeExporter) } +
-{ ['kube-prometheus/prometheus-' + name]: kp.prometheus[name] for name in std.objectFields(kp.prometheus) } +
+{ ['kube-prometheus/prometheus-' + name]: prometheus[name] for name in std.objectFields(prometheus) } +
 { ['kube-prometheus/prometheus-adapter-' + name]: kp.prometheusAdapter[name] for name in std.objectFields(kp.prometheusAdapter) } +
 
 // Thanos
@@ -117,7 +133,9 @@ local qnew = q {
           containers: [
             local c = q.deployment.spec.template.spec.containers[0];
             c {
-              args: c.args + ['--target=' + 'dnssrv+_grpc._tcp.prometheus-k8s-thanos-sidecar.' + common.prometheus.namespace + '.svc.cluster.local'],
+              args: c.args +
+                ['--target=dnssrv+_grpc._tcp.prometheus-k8s-thanos-sidecar.' + common.prometheus.namespace + '.svc.cluster.local'] +
+                ['--exemplar=dnssrv+_grpc._tcp.prometheus-k8s-thanos-sidecar.' + common.prometheus.namespace + '.svc.cluster.local'],
             },
           ],
         },
