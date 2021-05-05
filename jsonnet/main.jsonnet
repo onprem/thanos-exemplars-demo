@@ -7,6 +7,9 @@ local common = {
     baseImage: 'quay.io/thanos/thanos',
     version: 'v0.20.1',
   },
+  tempo: {
+    namespace: 'tempo',
+  },
 };
 
 local kp =
@@ -40,6 +43,16 @@ local kp =
             access: 'proxy',
             orgId: 1,
             url: 'http://thanos-query.' + common.thanos.namespace + '.svc:9090',
+            version: 1,
+            editable: false,
+          },
+          {
+            name: 'tempo',
+            type: 'tempo',
+            access: 'proxy',
+            orgId: 1,
+            uid: 'tempo1',
+            url: 'http://tempo.' + common.tempo.namespace + '.svc:3100',
             version: 1,
             editable: false,
           },
@@ -113,4 +126,17 @@ local qnew = q {
   },
 };
 
-{ ['thanos/thanos-query-' + name]: qnew[name] for name in std.objectFields(qnew) }
+{ ['thanos/thanos-query-' + name]: qnew[name] for name in std.objectFields(qnew) } +
+
+// Tempo
+
+local tempo = (import './lib/tempo/tempo.libsonnet')({
+  local cfg = self,
+  namespace: common.tempo.namespace,
+  version: '0.7.0',
+  image: 'grafana/tempo:' + cfg.version,
+  replicas: 1,
+  serviceMonitor: true,
+});
+
+{ ['tempo/tempo-' + name]: tempo[name] for name in std.objectFields(tempo) }

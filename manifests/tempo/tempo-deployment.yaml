@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/instance: tempo
+    app.kubernetes.io/name: tempo
+    app.kubernetes.io/version: 0.7.0
+  name: tempo
+  namespace: tempo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: tempo
+      app.kubernetes.io/name: tempo
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: tempo
+        app.kubernetes.io/name: tempo
+        app.kubernetes.io/version: 0.7.0
+    spec:
+      containers:
+      - args:
+        - -config.file=/etc/tempo/config/config.yaml
+        image: grafana/tempo:0.7.0
+        name: tempo
+        ports:
+        - containerPort: 3100
+          name: http
+          protocol: TCP
+        - containerPort: 6831
+          name: jaeger-compact
+          protocol: UDP
+        - containerPort: 14268
+          name: jaeger-http
+          protocol: TCP
+        resources: {}
+        volumeMounts:
+        - mountPath: /etc/tempo/config/
+          name: config
+          readOnly: false
+        - mountPath: /data
+          name: storage
+          readOnly: false
+      serviceAccountName: tempo
+      volumes:
+      - configMap:
+          name: tempo
+        name: config
+      - emptyDir: {}
+        name: storage

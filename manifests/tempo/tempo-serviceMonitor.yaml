@@ -1,0 +1,13 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: tempo
+  namespace: tempo
+spec:
+  endpoints:
+  - port: http
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: tempo
+      app.kubernetes.io/name: tempo
+      app.kubernetes.io/version: 0.7.0

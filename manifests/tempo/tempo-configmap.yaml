@@ -1,0 +1,47 @@
+apiVersion: v1
+data:
+  config.yaml: |-
+    "auth_enabled": false
+    "compactor":
+      "compaction":
+        "block_retention": "1h"
+        "compacted_block_retention": "10m"
+        "compaction_window": "1h"
+        "max_block_bytes": 100000000
+    "distributor":
+      "receivers":
+        "jaeger":
+          "protocols":
+            "grpc": null
+            "thrift_binary": null
+            "thrift_compact": null
+            "thrift_http": null
+    "ingester":
+      "max_block_bytes": 1000000
+      "max_block_duration": "5m"
+      "trace_idle_period": "10s"
+    "server":
+      "http_listen_port": 3100
+    "storage":
+      "trace":
+        "backend": "local"
+        "block":
+          "bloom_filter_false_positive": 0.050000000000000003
+          "encoding": "zstd"
+          "index_downsample_bytes": 1000
+        "local":
+          "path": "/data/tempo/blocks"
+        "pool":
+          "max_workers": 100
+          "queue_depth": 10000
+        "wal":
+          "encoding": "none"
+          "path": "/data/tempo/wal"
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: tempo
+    app.kubernetes.io/name: tempo
+    app.kubernetes.io/version: 0.7.0
+  name: tempo
+  namespace: tempo

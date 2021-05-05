@@ -11,7 +11,7 @@ vendor: $(JB)
 
 $(MANIFESTS_DIR): jsonnet/main.jsonnet vendor $(JSONNET) $(GOJSONTOYAML) $(JSONNET_SRC)
 	-rm -rf $(MANIFESTS_DIR)
-	-mkdir -p $(MANIFESTS_DIR)/{kube-prometheus/setup,thanos}
+	-mkdir -p $(MANIFESTS_DIR)/{kube-prometheus/setup,thanos,tempo}
 	$(JSONNET) -J vendor -m $(MANIFESTS_DIR) jsonnet/main.jsonnet | xargs -I{} sh -c 'cat {} | $(GOJSONTOYAML) > {}.yaml' -- {}
 	find $(MANIFESTS_DIR) -type f ! -name '*.yaml' -delete
 
