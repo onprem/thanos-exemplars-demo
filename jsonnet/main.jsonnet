@@ -96,4 +96,21 @@ local q = t.query(thanosCommon.config {
   stores+: ['dnssrv+_grpc._tcp.prometheus-k8s-thanos-sidecar.' + common.prometheus.namespace + '.svc.cluster.local'],
 });
 
-{ ['thanos/thanos-query-' + name]: q[name] for name in std.objectFields(q) }
+local qnew = q {
+  deployment+: {
+    spec+: {
+      template+: {
+        spec+: {
+          containers: [
+            local c = q.deployment.spec.template.spec.containers[0];
+            c {
+              args: c.args + ['--target=' + 'dnssrv+_grpc._tcp.prometheus-k8s-thanos-sidecar.' + common.prometheus.namespace + '.svc.cluster.local'],
+            },
+          ],
+        },
+      },
+    },
+  },
+};
+
+{ ['thanos/thanos-query-' + name]: qnew[name] for name in std.objectFields(qnew) }
