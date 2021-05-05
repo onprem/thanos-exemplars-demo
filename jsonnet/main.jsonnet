@@ -2,6 +2,11 @@ local common = {
   prometheus: {
     namespace: 'monitoring',
   },
+  thanos: {
+    namespace: 'thanos',
+    baseImage: 'quay.io/thanos/thanos',
+    version: 'v0.20.1',
+  },
 };
 
 local kp =
@@ -22,6 +27,23 @@ local kp =
       prometheus+: {
         // Enable Operator for all namespaces.
         namespaces: [],
+        thanos: {
+          baseImage: common.thanos.baseImage,
+          version: common.thanos.version,
+        },
+      },
+      grafana+: {
+        datasources: [
+          {
+            name: 'prometheus',
+            type: 'prometheus',
+            access: 'proxy',
+            orgId: 1,
+            url: 'http://thanos-query.' + common.thanos.namespace + '.svc:9090',
+            version: 1,
+            editable: false,
+          },
+        ],
       },
     },
   };
@@ -42,4 +64,36 @@ local kp =
 { ['kube-prometheus/kubernetes-' + name]: kp.kubernetesControlPlane[name] for name in std.objectFields(kp.kubernetesControlPlane) }
 { ['kube-prometheus/node-exporter-' + name]: kp.nodeExporter[name] for name in std.objectFields(kp.nodeExporter) } +
 { ['kube-prometheus/prometheus-' + name]: kp.prometheus[name] for name in std.objectFields(kp.prometheus) } +
-{ ['kube-prometheus/prometheus-adapter-' + name]: kp.prometheusAdapter[name] for name in std.objectFields(kp.prometheusAdapter) }
+{ ['kube-prometheus/prometheus-adapter-' + name]: kp.prometheusAdapter[name] for name in std.objectFields(kp.prometheusAdapter) } +
+
+// Thanos
+
+local t = import 'kube-thanos/thanos.libsonnet';
+
+local thanosCommon = {
+  config+:: {
+    local cfg = self,
+    namespace: common.thanos.namespace,
+    version: common.thanos.version,
+    image: common.thanos.baseImage + ':' + cfg.version,
+    volumeClaimTemplate: {
+      spec: {
+        accessModes: ['ReadWriteOnce'],
+        resources: {
+          requests: {
+            storage: '10Gi',
+          },
+        },
+      },
+    },
+  },
+};
+
+local q = t.query(thanosCommon.config {
+  replicas: 1,
+  replicaLabels: ['prometheus_replica', 'rule_replica'],
+  serviceMonitor: true,
+  stores+: ['dnssrv+_grpc._tcp.prometheus-k8s-thanos-sidecar.' + common.prometheus.namespace + '.svc.cluster.local'],
+});
+
+{ ['thanos/thanos-query-' + name]: q[name] for name in std.objectFields(q) }

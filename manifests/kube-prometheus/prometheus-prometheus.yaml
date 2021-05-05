@@ -45,4 +45,7 @@ spec:
   serviceAccountName: prometheus-k8s
   serviceMonitorNamespaceSelector: {}
   serviceMonitorSelector: {}
+  thanos:
+    baseImage: quay.io/thanos/thanos
+    version: v0.20.1
   version: 2.26.0

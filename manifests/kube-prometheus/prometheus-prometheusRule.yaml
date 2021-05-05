@@ -254,3 +254,34 @@ spec:
       for: 15m
       labels:
         severity: critical
+  - name: thanos-sidecar
+    rules:
+    - alert: ThanosSidecarPrometheusDown
+      annotations:
+        description: Thanos Sidecar {{$labels.job}} {{$labels.pod}} cannot connect
+          to Prometheus.
+        summary: Thanos Sidecar cannot connect to Prometheus
+      expr: |
+        sum by (job, pod) (thanos_sidecar_prometheus_up{job="thanos-sidecar"} == 0)
+      for: 5m
+      labels:
+        severity: critical
+    - alert: ThanosSidecarBucketOperationsFailed
+      annotations:
+        description: Thanos Sidecar {{$labels.job}} {{$labels.pod}} bucket operations
+          are failing
+        summary: Thanos Sidecar bucket operations are failing
+      expr: |
+        rate(thanos_objstore_bucket_operation_failures_total{job="thanos-sidecar"}[5m]) > 0
+      for: 5m
+      labels:
+        severity: critical
+    - alert: ThanosSidecarUnhealthy
+      annotations:
+        description: Thanos Sidecar {{$labels.job}} {{$labels.pod}} is unhealthy for
+          {{ $value }} seconds.
+        summary: Thanos Sidecar is unhealthy.
+      expr: |
+        time() - max(thanos_sidecar_last_heartbeat_success_time_seconds{job="thanos-sidecar"}) by (job, pod) >= 600
+      labels:
+        severity: critical
