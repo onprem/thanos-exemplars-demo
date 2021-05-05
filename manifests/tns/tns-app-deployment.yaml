@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: app
+    app.kubernetes.io/instance: tns-app
+    app.kubernetes.io/name: tns-app
+    app.kubernetes.io/version: latest
+  name: tns-app
+  namespace: tns
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: app
+      app.kubernetes.io/instance: tns-app
+      app.kubernetes.io/name: tns-app
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: app
+        app.kubernetes.io/instance: tns-app
+        app.kubernetes.io/name: tns-app
+        app.kubernetes.io/version: latest
+    spec:
+      containers:
+      - args:
+        - -log.level=debug
+        - http://tns-db
+        env:
+        - name: JAEGER_AGENT_HOST
+          value: tempo.tempo.svc
+        - name: JAEGER_TAGS
+          value: namespace=tns
+        - name: JAEGER_SAMPLER_TYPE
+          value: const
+        - name: JAEGER_SAMPLER_PARAM
+          value: "1"
+        image: grafana/tns-app:latest
+        name: tns-app
+        ports:
+        - containerPort: 80
+          name: http-metrics
+        resources: {}
+      serviceAccountName: tns-app

@@ -139,4 +139,52 @@ local tempo = (import './lib/tempo/tempo.libsonnet')({
   serviceMonitor: true,
 });
 
-{ ['tempo/tempo-' + name]: tempo[name] for name in std.objectFields(tempo) }
+{ ['tempo/tempo-' + name]: tempo[name] for name in std.objectFields(tempo) } +
+
+// Demo Application - grafana/tns
+
+local tns = import './lib/tns/tns.libsonnet';
+
+local tnsCommon = {
+  config+:: {
+    local cfg = self,
+    namespace: 'tns',
+    version: 'latest',
+    replicas: 1,
+    env: [
+      {
+        name: 'JAEGER_AGENT_HOST',
+        value: 'tempo.' + common.tempo.namespace + '.svc',
+      },
+      {
+        name: 'JAEGER_TAGS',
+        value: 'namespace=' + cfg.namespace,
+      },
+      {
+        name: 'JAEGER_SAMPLER_TYPE',
+        value: 'const',
+      },
+      {
+        name: 'JAEGER_SAMPLER_PARAM',
+        value: '1',
+      },
+    ],
+    serviceMonitor: true,
+  },
+};
+
+local tnsapp = tns.app(tnsCommon.config {
+  image: 'grafana/tns-app:' + tnsCommon.config.version,
+});
+
+local tnsdb = tns.db(tnsCommon.config {
+  image: 'grafana/tns-db:' + tnsCommon.config.version,
+});
+
+local tnsloadgen = tns.loadgen(tnsCommon.config {
+  image: 'grafana/tns-loadgen:' + tnsCommon.config.version,
+});
+
+{ ['tns/tns-app-' + name]: tnsapp[name] for name in std.objectFields(tnsapp) } +
+{ ['tns/tns-db-' + name]: tnsdb[name] for name in std.objectFields(tnsdb) } +
+{ ['tns/tns-loadgen-' + name]: tnsloadgen[name] for name in std.objectFields(tnsloadgen) }

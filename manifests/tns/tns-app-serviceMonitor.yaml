@@ -1,0 +1,14 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: tns-app
+  namespace: tns
+spec:
+  endpoints:
+  - port: http-metrics
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: app
+      app.kubernetes.io/instance: tns-app
+      app.kubernetes.io/name: tns-app
+      app.kubernetes.io/version: latest

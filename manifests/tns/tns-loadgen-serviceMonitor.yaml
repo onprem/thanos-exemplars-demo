@@ -1,0 +1,14 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: tns-loadgen
+  namespace: tns
+spec:
+  endpoints:
+  - port: http-metrics
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: loadgen
+      app.kubernetes.io/instance: tns-loadgen
+      app.kubernetes.io/name: tns-loadgen
+      app.kubernetes.io/version: latest
